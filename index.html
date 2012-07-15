@@ -1,0 +1,82 @@
+<!DOCTYPE HTML>
+<head>
+<title>r2d3 examples</title>
+<!--[if IE]>
+	<script type="text/javascript" src="lib/sizzle.min.js"></script>
+	<script type="text/javascript" src="lib/es5-shim.min.js"></script>
+	<![endif]-->
+	<script type="text/javascript" src="lib/raphael-min.js"></script>
+	<script type="text/javascript" src="lib/d3.v2.min.js"></script>
+	<script type="text/javascript" src="lib/underscore.js"></script>
+	<script type="text/javascript" src="lib/zepto.js"></script>
+<body>
+<script type="text/javascript">
+function makeData() {
+	var data = [],
+			count = 0;
+	while (count < 30) {
+		data.push({
+			"x": 1340938902744 + count*86400000,
+			"y": Math.floor((Math.random() * 600)+1)
+		})
+		count++;
+	}
+	$('body').append("div").text(JSON.stringify(data));
+}
+
+var margin = {top: 30, right: 10, bottom: 10, left: 30},
+        width = 900 - margin.right - margin.left,
+        height = 530 - margin.top - margin.bottom;
+
+    var format = d3.time.format("%b %e");
+
+    var y = d3.scale.linear()
+        .range([0, height]);
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .tickSize(-height);
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickSize(0);
+
+    var svg = Raphael(0, 0, width + margin.left + margin.right, height + margin.top + margin.bottom);
+
+    d3.json("revenue.json", function(rData) {
+
+			var data = rData[0];
+      // scale domain.
+      y.domain([0, d3.max($.map(data, function(d) {
+					return d3.max(d, function(e, i) {
+						return data["total"][i].y + data["gross"][i].y
+					})}))*1.1]);
+      x.domain(data["total"].map(function(d) { return d.x; }));
+
+      data["gross"].forEach(function(d) {
+				// Gross Revenue
+        var bar = svg.set()
+        bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+          .attr({ fill: '#666', stroke: 0 }));
+				// Label
+        bar.push(svg.text(x.rangeBand(), y(d.y), format(new Date(d.x)))
+          .attr({ fill: '#333', 'text-anchor': 'end' }).transform(['t', -3, -10]));
+				
+				bar.transform(['t', x(d.x), height - y(d.y)]);
+      });
+      
+			data["total"].forEach(function(d, i) {
+				// Total Revenue
+        var bar = svg.set()
+        bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+          .attr({ fill: '#444', stroke: 0 }));
+				
+				bar.transform(['t', x(d.x), height - y(d.y) - y(data["gross"][i].y)]);
+      });
+    });
+</script>
