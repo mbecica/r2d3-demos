@@ -9,7 +9,20 @@
 	<script type="text/javascript" src="lib/d3.v2.min.js"></script>
 	<script type="text/javascript" src="lib/underscore.js"></script>
 	<script type="text/javascript" src="lib/zepto.js"></script>
+	<style>
+		#revenue {
+			width:900px;
+			margin-left:20px;
+			margin-bottom:20px;
+		}
+		#use {
+			width:450px;
+			margin-left:20px;
+		}
+	</style>
 <body>
+<div id="revenue"></div>
+<div id="use"></div>
 <script type="text/javascript">
 function makeData() {
 	var data = [],
@@ -22,6 +35,95 @@ function makeData() {
 		count++;
 	}
 	$('body').append("div").text(JSON.stringify(data));
+}
+
+var sline = {
+	margin: {top:20, right:0, bottom:0, left:15},
+	width: function() {return 450 - sline.margin.right - sline.margin.left},
+	height: function() {return 250 - sline.margin.top - sline.margin.bottom},	
+	style: {
+		"line": {
+			fill: 'none', stroke: 'steelblue', 'stroke-width': '1.5px'
+		},
+		"dot": {
+			fill: 'steelblue', stroke: '#fff', 'stroke-width': '1.5px'
+		},
+		"ylabel": {
+			fill: "#999", "text-anchor":"left"
+		},
+		"yline": {
+			"stroke":"#aaa", "stroke-width":1, "stroke-dasharray":". "
+		},
+		"baseline": {
+			"stroke":"#666", "stroke-width":.5
+		},
+		"xlabel": {
+			fill: '#999', 'text-anchor': 'middle'
+		}
+	},
+	draw: function() {
+		var x = d3.time.scale()
+				.range([sline.margin.left, sline.width()]);
+
+		var y = d3.scale.linear()
+				.range([sline.height(), sline.margin.bottom]);
+
+		var xAxis = d3.svg.axis()
+				.scale(x)
+				.orient("bottom");
+
+		var yAxis = d3.svg.axis()
+				.scale(y)
+				.orient("left");
+
+		var line = d3.svg.line()
+				.x(function(d) { return x(d.x); })
+				.y(function(d) { return y(d.y); });
+
+		var svg = Raphael(document.getElementById("use"), 
+											sline.width() + sline.margin.left + sline.margin.right, 
+											sline.height() + sline.margin.top + sline.margin.bottom);
+		
+		svg.setStart();
+    
+		d3.json("revenue.json", function(rData) {
+    	var format = d3.time.format("%b %e");
+			var data = rData[0]["total"];
+
+      // scale domain.
+      y.domain([0, d3.max(data, function(d) {
+						return d.y 
+					})*1.1]);
+      x.domain([d3.min(data, function(d) { return d.x; }), d3.max(data, function(d) {return d.x;})]);
+			
+			y.ticks(3).forEach(function(a) {
+				var tick = svg.set(),
+						st = "M0,"+y(a)+"L"+sline.width()+","+y(a);
+				if (a != 0) {
+					tick.push(svg.text(sline.margin.left, y(a)+10, a)
+											 .attr(sline.style.ylabel)); 
+					tick.push(svg.path(st).attr(sline.style.yline));
+				} else {
+					tick.push(svg.path(st).attr(sline.style.baseline));	
+				}
+			});
+
+			svg.path(line(data))
+				.attr(sline.style.line);
+
+			data.forEach(function(d,i) {
+				svg.circle(x(d.x), y(d.y), 4)
+					.attr(sline.style.dot);
+
+				// Labels
+				if (i%7 == 0 || i == 0) {
+					svg.text(x(d.x), sline.height() + 10, format(new Date(d.x)))
+						.attr(sline.style.xlabel);
+				}
+			});
+		});
+		svg.setFinish()	
+	}
 }
 
 var sb = {
@@ -67,7 +169,7 @@ var sb = {
         .orient("left")
         .tickSize(0);
 
-    var svg = Raphael(sb.margin.left, sb.margin.top, 
+    var svg = Raphael(document.getElementById("revenue"), 
 											sb.width() + sb.margin.left + sb.margin.right, 
 											sb.height() + sb.margin.top + sb.margin.bottom);
 
@@ -118,4 +220,5 @@ var sb = {
 	}
 }
 sb.draw();
+sline.draw();
 </script>
