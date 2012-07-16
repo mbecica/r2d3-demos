@@ -183,6 +183,7 @@ var sb = {
 					})}))*1.1]);
       x.domain(data["total"].map(function(d) { return d.x; }));
 
+			// y axis 
 			y.ticks(4).forEach(function(a) {
 				var tick = svg.set(),
 						st = "M0,"+(sb.height()-y(a))+"L"+(sb.width()-sb.margin.left)+","+(sb.height()-y(a));
@@ -196,11 +197,21 @@ var sb = {
 			});
       
 			data["gross"].forEach(function(d, i) {
+				// Hover rectangle
+				var h = svg.set(),
+						hrect = svg.rect(0, 0, x.rangeBand(), sb.height()).attr({"fill":"#eee", "fill-opacity":0, "stroke":0});
+				hrect.hover(function() {
+					this.attr({"fill-opacity":.3});
+				}, function() {
+					this.attr({"fill-opacity":0});
+				});
+				h.push(hrect);
+				h.transform(['t', x(d.x), 0]);
 				// Gross Revenue
-        var bar = svg.set()
+        var bar = svg.set();
         bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
           .attr(sb.style.bar1));
-				// Labels
+				// x axis
 				if (i%7 == 0 || i ==0) {
 					bar.push(svg.text(x.rangeBand()-sb.margin.left+2, y(d.y) + 10, format(new Date(d.x)))
 						.attr(sb.style.xlabel));
