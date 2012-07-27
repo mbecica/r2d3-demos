@@ -6,22 +6,23 @@
 <script type="text/javascript" src="lib/zepto.js"></script>
 </head>
 <body>
-<div id="graphs"></div>
 <script type="text/javascript">
 $(function() {
 
-var w = 720,
+var w = 700,
     h = 300,
-    p = [0, 25, 15, 0],
+    p = [20, 50, 30, 20],
     x = d3.scale.ordinal().rangeRoundBands([0, w - p[1] - p[3]]),
     y = d3.scale.linear().range([0, h - p[0] - p[2]]),
     z = d3.scale.ordinal().range(["darkgray", "lightblue"]),
     parse = d3.time.format("%b %e").parse,
     format = d3.time.format("%b %e");
 
-$("#graphs").append("<canvas width="+w+" height="+h+" id='canvas'></canvas");
-var canvas = document.getElementById("canvas");
-var ctx = canvas.getContext('2d');
+var svg = d3.select("body").append("svg:svg")
+    .attr("width", w)
+    .attr("height", h)
+  	.append("svg:g")
+    .attr("transform", "translate(" + p[3] + "," + (h - p[2]) + ")");
 
 d3.json("revenue.json", function(rData) {
 
@@ -37,39 +38,23 @@ d3.json("revenue.json", function(rData) {
           })}))*1.1]);
   x.domain(data["total"].map(function(d) { return d.x; }));
 
-	// y axis
-	y.ticks(4).forEach(function(a) {
-		ctx.fillStyle = "#999";
-		if (a != 0) {
-			ctx.fillText(a, 0, h-p[2]-y(a)+12);
-			ctx.lineWidth = .1;
-			ctx.beginPath();
-			ctx.moveTo(0, h-p[2]-y(a));
-			ctx.lineTo(w, h-p[2]-y(a));
-			ctx.stroke();
-		} else {
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			ctx.moveTo(0, h-p[2]-y(a)+1);
-			ctx.lineTo(w, h-p[2]-y(a)+1);
-			ctx.stroke();
-		}
-	});
+  // Add a group for each bar.
+  var bar = svg.selectAll("g.bar")
+      .data(stacks)
+    	.enter().append("svg:g")
+      .attr("class", "bar")
+      .style("fill", function(d, i) { return z(i); });
 
-  // Draw bars
-	_(stacks).each(function(row, i) {
-		_(row).each(function(d, j) {
-			ctx.fillStyle = z(i);
-			ctx.fillRect(p[1]+x(d.x)+1, h-p[2]-y(d.y0)-y(d.y), x.rangeBand()-1, y(d.y));
-			if (j%7 == 0 || j==0) {
-				ctx.fillStyle = "#999";
-				ctx.fillText(format(new Date(d.x)), x(d.x) + x.rangeBand(), h-2);
-			}
-		});
-	});
+  // Add a rect for each date.
+  var rect = bar.selectAll("rect")
+      .data(Object)
+    	.enter().append("svg:rect")
+      .attr("x", function(d) { return x(d.x) + 1; })
+      .attr("y", function(d) { return -y(d.y) - y(d.y0); })
+      .attr("height", function(d) { return y(d.y); })
+      .attr("width", x.rangeBand()-1);
 
-  /*
-	// Add a label per date.
+  // Add a label per date.
   var label = svg.selectAll("text")
       .data(x.domain())
     	.enter().append("svg:text")
@@ -79,7 +64,22 @@ d3.json("revenue.json", function(rData) {
       .attr("dy", ".71em")
       .text(function(d) { return format(new Date(d)) });
 
-*/
-	});
+  // Add y-axis rules.
+  var rule = svg.selectAll("g.rule")
+      .data(y.ticks(3))
+    	.enter().append("svg:g")
+      .attr("class", "rule")
+      .attr("transform", function(d) { return "translate(0," + -y(d) + ")"; });
+
+  rule.append("svg:line")
+      .attr("x2", w - p[1] - p[3])
+      .style("stroke", function(d) { return d ? "#ccc" : "#000"; })
+      .style("stroke-opacity", function(d) { return d ? .7 : null; });
+
+  rule.append("svg:text")
+      .attr("x", 0)
+      .attr("dy", "1em")
+      .text(d3.format(",d"));
+});
 });
 </script>
