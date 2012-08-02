@@ -30,12 +30,13 @@ function makeData() {
 	while (count < 30) {
 		data.push({
 			"x": 1340938902744 + count*86400000,
-			"y": Math.floor((Math.random() * 600)+1)
+			"y": Math.floor((Math.random() * 1500)+1)
 		})
 		count++;
 	}
 	$('body').append("div").text(JSON.stringify(data));
 }
+//makeData();
 
 var sline = {
 	margin: {top:20, right:0, bottom:0, left:15},
@@ -232,6 +233,6 @@ var sb = {
     });
 	}
 }
-sb.draw();
-sline.draw();
+//sb.draw();
+//sline.draw();
 </script>

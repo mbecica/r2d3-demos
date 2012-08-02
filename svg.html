@@ -1,11 +1,12 @@
 <!DOCTYPE HTML>
 <head>
-<title>canvas examples</title>
+<title>svg examples</title>
 <script type="text/javascript" src="lib/d3.v2.min.js"></script>
 <script type="text/javascript" src="lib/underscore.js"></script>
 <script type="text/javascript" src="lib/zepto.js"></script>
 </head>
 <body>
+<button id="switch">Switch</button>
 <script type="text/javascript">
 $(function() {
 
@@ -16,7 +17,8 @@ var w = 700,
     y = d3.scale.linear().range([0, h - p[0] - p[2]]),
     z = d3.scale.ordinal().range(["darkgray", "lightblue"]),
     parse = d3.time.format("%b %e").parse,
-    format = d3.time.format("%b %e");
+    format = d3.time.format("%b %e"),
+		swap = true;
 
 var svg = d3.select("body").append("svg:svg")
     .attr("width", w)
@@ -24,13 +26,35 @@ var svg = d3.select("body").append("svg:svg")
   	.append("svg:g")
     .attr("transform", "translate(" + p[3] + "," + (h - p[2]) + ")");
 
+var renderOne = function(file) {
+	d3.json(file, function(rData) {
+		var data = rData[0];
+		var stacks = d3.layout.stack()(_(data).map(function(row) {
+			return row;
+		}));
+		rerender(data, stacks);
+	});
+};
+
 d3.json("revenue.json", function(rData) {
+		var data = rData[0];
+		var stacks = d3.layout.stack()(_(data).map(function(row) {
+			return row;
+		}));
+		render(data, stacks);
+});
 
-	var data = rData[0];
-	var stacks = d3.layout.stack()(_(data).map(function(row) {
-		return row;
-}));
+$('#switch').click(function() {
+	if (swap) {
+		renderOne("rev-two.json");
+		swap = false;
+	} else {
+		renderOne("revenue.json");
+		swap = true;
+	}
+});
 
+var render = function(data, stacks) {
   // Compute the x-domain and y-domain.
 	y.domain([0, d3.max($.map(data, function(d) {
           return d3.max(d, function(e, i) {
@@ -55,13 +79,14 @@ d3.json("revenue.json", function(rData) {
       .attr("width", x.rangeBand()-1);
 
   // Add a label per date.
-  var label = svg.selectAll("text")
+  var label = svg.selectAll("text.xlabel")
       .data(x.domain())
     	.enter().append("svg:text")
       .attr("x", function(d) { return x(d) + x.rangeBand() / 2; })
       .attr("y", 6)
       .attr("text-anchor", "middle")
       .attr("dy", ".71em")
+			.attr("class", "xlabel")
       .text(function(d) { return format(new Date(d)) });
 
   // Add y-axis rules.
@@ -73,13 +98,62 @@ d3.json("revenue.json", function(rData) {
 
   rule.append("svg:line")
       .attr("x2", w - p[1] - p[3])
+			.attr("class", "yline")
       .style("stroke", function(d) { return d ? "#ccc" : "#000"; })
       .style("stroke-opacity", function(d) { return d ? .7 : null; });
 
   rule.append("svg:text")
       .attr("x", 0)
       .attr("dy", "1em")
+			.attr("class", "ylabel")
       .text(d3.format(",d"));
-});
+	};
+
+var rerender = function(data, stacks) {
+  // Compute the x-domain and y-domain.
+	y.domain([0, d3.max($.map(data, function(d) {
+          return d3.max(d, function(e, i) {
+            return data["total"][i].y + data["gross"][i].y
+          })}))*1.1]);
+  x.domain(data["total"].map(function(d) { return d.x; }));
+
+  // Add a group for each bar.
+  var bar = svg.selectAll("g.bar")
+							 .data(stacks);
+
+  // Add a rect for each date.
+  bar.selectAll("rect")
+      .data(Object)
+			.transition()
+			.duration(1000)
+      .attr("x", function(d) { return x(d.x) + 1; })
+      .attr("y", function(d) { return -y(d.y) - y(d.y0); })
+      .attr("height", function(d) { return y(d.y); })
+      .attr("width", x.rangeBand()-1);
+
+  // Add a label per date.
+  svg.selectAll("text.xlabel")
+      .data(x.domain())
+			.transition()
+			.duration(1000)
+      .attr("x", function(d) { return x(d) + x.rangeBand() / 2; })
+      .attr("y", 6)
+      .text(function(d) { return format(new Date(d)) });
+
+  // Add y-axis rules.
+  svg.selectAll("g.rule")
+      .data(y.ticks(3))
+			.transition()
+			.duration(1000)
+      .attr("transform", function(d) { return "translate(0," + -y(d) + ")"; });
+
+	svg.selectAll("line.yline")
+      .attr("x2", w - p[1] - p[3])
+      .style("stroke", function(d) { return d ? "#ccc" : "#000"; })
+      .style("stroke-opacity", function(d) { return d ? .7 : null; });
+
+  svg.selectAll("text.ylabel")
+      .text(d3.format(",d"));
+	};
 });
 </script>
