@@ -3,14 +3,22 @@
 <title>canvas examples</title>
 <script type="text/javascript" src="lib/d3.v2.min.js"></script>
 <script type="text/javascript" src="lib/underscore.js"></script>
-<script type="text/javascript" src="lib/zepto.js"></script>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="lib/modernizr.custom.min.js"></script>
+<script src="lib/js-webshim/dev/polyfiller.js"></script>
 </head>
 <body>
 <div id="graphs"></div>
 <button id="switch">Switch</button>
 <script type="text/javascript">
+window.FlashCanvasOptions = {
+		disableContextMenu: true
+};
+$.webshims.polyfill();
 $(function() {
-
+$.webshims.setOptions('canvas', {
+	type: 'flashpro' //excanvas | flash | flashpro
+});
 var w = 720,
     h = 300,
     p = [0, 25, 15, 0],
