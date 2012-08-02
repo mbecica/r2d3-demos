@@ -1,0 +1,238 @@
+<!DOCTYPE HTML>
+<head>
+<title>r2d3 examples</title>
+<!--[if IE]>
+	<script type="text/javascript" src="lib/sizzle.min.js"></script>
+	<script type="text/javascript" src="lib/es5-shim.min.js"></script>
+	<![endif]-->
+	<script type="text/javascript" src="lib/raphael-min.js"></script>
+	<script type="text/javascript" src="lib/d3.v2.min.js"></script>
+	<script type="text/javascript" src="lib/underscore.js"></script>
+	<script type="text/javascript" src="lib/zepto.js"></script>
+	<style>
+		#revenue {
+			width:900px;
+			margin-left:20px;
+			margin-bottom:20px;
+		}
+		#use {
+			width:450px;
+			margin-left:20px;
+		}
+	</style>
+<body>
+<div id="revenue"></div>
+<div id="use"></div>
+<script type="text/javascript">
+function makeData() {
+	var data = [],
+			count = 0;
+	while (count < 30) {
+		data.push({
+			"x": 1340938902744 + count*86400000,
+			"y": Math.floor((Math.random() * 1500)+1)
+		})
+		count++;
+	}
+	$('body').append("div").text(JSON.stringify(data));
+}
+//makeData();
+
+var sline = {
+	margin: {top:20, right:0, bottom:0, left:15},
+	width: function() {return 450 - sline.margin.right - sline.margin.left},
+	height: function() {return 250 - sline.margin.top - sline.margin.bottom},	
+	style: {
+		"line": {
+			fill: 'none', stroke: 'steelblue', 'stroke-width': '1.5px'
+		},
+		"dot": {
+			fill: 'steelblue', stroke: '#fff', 'stroke-width': '1.5px'
+		},
+		"ylabel": {
+			fill: "#999", "text-anchor":"left"
+		},
+		"yline": {
+			"stroke":"#aaa", "stroke-width":1, "stroke-dasharray":". "
+		},
+		"baseline": {
+			"stroke":"#666", "stroke-width":.5
+		},
+		"xlabel": {
+			fill: '#999', 'text-anchor': 'middle'
+		}
+	},
+	draw: function() {
+		var x = d3.time.scale()
+				.range([sline.margin.left, sline.width()]);
+
+		var y = d3.scale.linear()
+				.range([sline.height(), sline.margin.bottom]);
+
+		var xAxis = d3.svg.axis()
+				.scale(x)
+				.orient("bottom");
+
+		var yAxis = d3.svg.axis()
+				.scale(y)
+				.orient("left");
+
+		var line = d3.svg.line()
+				.x(function(d) { return x(d.x); })
+				.y(function(d) { return y(d.y); });
+
+		var svg = Raphael(document.getElementById("use"), 
+											sline.width() + sline.margin.left + sline.margin.right, 
+											sline.height() + sline.margin.top + sline.margin.bottom);
+		
+		svg.setStart();
+    
+		d3.json("revenue.json", function(rData) {
+    	var format = d3.time.format("%b %e");
+			var data = rData[0]["total"];
+
+      // scale domain.
+      y.domain([0, d3.max(data, function(d) {
+						return d.y 
+					})*1.1]);
+      x.domain([d3.min(data, function(d) { return d.x; }), d3.max(data, function(d) {return d.x;})]);
+			
+			y.ticks(3).forEach(function(a) {
+				var tick = svg.set(),
+						st = "M0,"+y(a)+"L"+sline.width()+","+y(a);
+				if (a != 0) {
+					tick.push(svg.text(sline.margin.left, y(a)+10, a)
+											 .attr(sline.style.ylabel)); 
+					tick.push(svg.path(st).attr(sline.style.yline));
+				} else {
+					tick.push(svg.path(st).attr(sline.style.baseline));	
+				}
+			});
+
+			svg.path(line(data))
+				.attr(sline.style.line);
+
+			data.forEach(function(d,i) {
+				svg.circle(x(d.x), y(d.y), 4)
+					.attr(sline.style.dot);
+
+				// Labels
+				if (i%7 == 0 || i == 0) {
+					svg.text(x(d.x), sline.height() + 10, format(new Date(d.x)))
+						.attr(sline.style.xlabel);
+				}
+			});
+		});
+		svg.setFinish()	
+	}
+}
+
+var sb = {
+	margin: {top: 0, right: 0, bottom: 20, left: 15},
+  width: function() { return 900 - sb.margin.right - sb.margin.left},
+  height: function() { return 360 - sb.margin.top - sb.margin.bottom},
+	style: {
+		"ylabel": {
+			fill: "#999", "text-anchor":"left"
+		},
+		"yline": {
+			"stroke":"#aaa", "stroke-width":1, "stroke-dasharray":". "
+		},
+		"baseline": {
+			"stroke":"#666", "stroke-width":.5
+		},
+		"xlabel": {
+			fill: '#999', 'text-anchor': 'middle'
+		},
+		"bar1": {
+			fill: '#666', stroke: 0
+		},
+		"bar2": {
+			fill: "#444", stroke: 0
+		}
+	},
+	draw: function() {
+    var format = d3.time.format("%b %e");
+
+    var y = d3.scale.linear()
+        .range([0, sb.height()]);
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([sb.margin.left, sb.width()], .1);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .tickSize(-sb.height());
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickSize(0);
+
+    var svg = Raphael(document.getElementById("revenue"), 
+											sb.width() + sb.margin.left + sb.margin.right, 
+											sb.height() + sb.margin.top + sb.margin.bottom);
+
+    d3.json("revenue.json", function(rData) {
+
+			var data = rData[0];
+      // scale domain.
+      y.domain([0, d3.max($.map(data, function(d) {
+					return d3.max(d, function(e, i) {
+						return data["total"][i].y + data["gross"][i].y
+					})}))*1.1]);
+      x.domain(data["total"].map(function(d) { return d.x; }));
+
+			// y axis 
+			y.ticks(4).forEach(function(a) {
+				var tick = svg.set(),
+						st = "M0,"+(sb.height()-y(a))+"L"+(sb.width()-sb.margin.left)+","+(sb.height()-y(a));
+				if (a != 0) {
+					tick.push(svg.text(sb.margin.left, sb.height()-y(a)+10, a)
+											 .attr(sb.style.ylabel)); 
+					tick.push(svg.path(st).attr(sb.style.yline));
+				} else {
+					tick.push(svg.path(st).attr(sb.style.baseline));	
+				}
+			});
+      
+			// Hover rectangle
+			var h = svg.set(),
+					hrect = svg.rect(0, 0, x.rangeBand(), sb.height()).attr({"fill":"#eee", "fill-opacity":0, "stroke":0});
+					h.push(hrect);
+
+			data["gross"].forEach(function(d, i) {
+				// Gross Revenue
+        var bar = svg.set();
+        bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+          .attr(sb.style.bar1));
+				// x axis
+				if (i%7 == 0 || i ==0) {
+					bar.push(svg.text(x.rangeBand()-sb.margin.left+2, y(d.y) + 10, format(new Date(d.x)))
+						.attr(sb.style.xlabel));
+				}
+				bar.transform(['t', x(d.x), sb.height() - y(d.y)]);
+      });
+      
+			data["total"].forEach(function(d, i) {
+				// Total Revenue
+        var bar = svg.set()
+        ba.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+          .attr(sb.style.bar2));
+				
+				bar.transform(['t', x(d.x), sb.height() - y(d.y) - y(data["gross"][i].y)]);
+      });
+			
+			hrect.hover(function() {
+				this.attr({"fill-opacity":.3});
+			}, function() {
+				this.attr({"fill-opacity":0});
+			});
+
+    });
+	}
+}
+//sb.draw();
+//sline.draw();
+</script>
