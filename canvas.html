@@ -7,67 +7,136 @@
 </head>
 <body>
 <div id="graphs"></div>
+<button id="switch">Switch</button>
 <script type="text/javascript">
 $(function() {
 
 var w = 720,
     h = 300,
     p = [0, 25, 15, 0],
+		transition_count = 0,
+		last = [],
     x = d3.scale.ordinal().rangeRoundBands([0, w - p[1] - p[3]]),
     y = d3.scale.linear().range([0, h - p[0] - p[2]]),
     z = d3.scale.ordinal().range(["darkgray", "lightblue"]),
     parse = d3.time.format("%b %e").parse,
-    format = d3.time.format("%b %e");
+    format = d3.time.format("%b %e"),
+		swap = true;
 
 $("#graphs").append("<canvas width="+w+" height="+h+" id='canvas'></canvas");
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext('2d');
 
-d3.json("revenue.json", function(rData) {
-
-	var data = rData[0];
-	var stacks = d3.layout.stack()(_(data).map(function(row) {
+d3.json("revenue.json", function(json) {
+	//Draw graph on load
+	var data = d3.layout.stack()(_(json[0]).map(function(row) {
 		return row;
-}));
+	}));
+	render(data);
+  last = data;
+});
 
-  // Compute the x-domain and y-domain.
-	y.domain([0, d3.max($.map(data, function(d) {
-          return d3.max(d, function(e, i) {
-            return data["total"][i].y + data["gross"][i].y
-          })}))*1.1]);
-  x.domain(data["total"].map(function(d) { return d.x; }));
+$('#switch').click(function() {
+  if (swap) {
+    transition("rev-two.json", ++transition_count);
+    swap = false;
+  } else {
+    transition("revenue.json", ++transition_count);
+    swap = true;
+  }
+});
+
+function render(data) {
+	// Compute the x-domain and y-domain.
+	y.domain([0, d3.max(data.map(function(d) {
+					return d3.max(d, function(e, i) {
+						return data[1][i].y + data[0][i].y
+					})}))*1.1]);
+	x.domain(data[1].map(function(d) { return d.x; }));
 
 	// y axis
-	y.ticks(4).forEach(function(a) {
-		ctx.fillStyle = "#999";
-		if (a != 0) {
-			ctx.fillText(a, 0, h-p[2]-y(a)+12);
-			ctx.lineWidth = .1;
-			ctx.beginPath();
-			ctx.moveTo(0, h-p[2]-y(a));
-			ctx.lineTo(w, h-p[2]-y(a));
-			ctx.stroke();
-		} else {
-			ctx.lineWidth = 1;
-			ctx.beginPath();
-			ctx.moveTo(0, h-p[2]-y(a)+1);
-			ctx.lineTo(w, h-p[2]-y(a)+1);
-			ctx.stroke();
-		}
-	});
+	y.ticks(4).map(drawAxis);
 
-  // Draw bars
-	_(stacks).each(function(row, i) {
+	// Draw bars
+	_(data).each(function(row, i) {
 		_(row).each(function(d, j) {
-			ctx.fillStyle = z(i);
-			ctx.fillRect(p[1]+x(d.x)+1, h-p[2]-y(d.y0)-y(d.y), x.rangeBand()-1, y(d.y));
-			// x axis
-			if (j%7 == 0 || j==0) {
-				ctx.fillStyle = "#999";
-				ctx.fillText(format(new Date(d.x)), x(d.x) + x.rangeBand(), h-2);
-			}
+			drawBar(i, j, d);
 		});
 	});
+};
+
+function drawBar(i, j, d) {
+	ctx.fillStyle = z(i);
+	ctx.fillRect(p[1]+x(d.x)+1, h-p[2]-y(d.y0)-y(d.y), x.rangeBand()-1, y(d.y));
+	// x axis
+	if (j%7 == 0 || j==0) {
+		ctx.fillStyle = "#999";
+		ctx.fillText(format(new Date(d.x)), x(d.x) + x.rangeBand(), h-2);
+	}
+};
+
+function drawAxis(a) {
+	//draw y axis
+	ctx.fillStyle = "#999";
+	if (a != 0) {
+		ctx.fillText(a, 0, h-p[2]-y(a)+12);
+		ctx.lineWidth = .1;
+		ctx.beginPath();
+		ctx.moveTo(0, h-p[2]-y(a));
+		ctx.lineTo(w, h-p[2]-y(a));
+		ctx.stroke();
+	} else {
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.moveTo(0, h-p[2]-y(a)+1);
+		ctx.lineTo(w, h-p[2]-y(a)+1);
+		ctx.stroke();
+	}
+};
+
+function transition(file, count) {
+	d3.json(file, function(json) {
+    var data = d3.layout.stack()(_(json[0]).map(function(row) { return row; }));
+
+		// find next positions by interpolating arrays
+		var transition = d3.interpolate(position(last), position(data));
+
+		// run transition
+		d3.timer(function(t) {
+			// abort old transition
+			if (count < transition_count) return true;
+
+			clear();
+			if (t > 1000) {
+				last = data;
+				render(last);
+				return true
+			};
+			last = transition(t/1000);
+			render(resumeData(last));
+		});
+  });
+};
+
+function resumeData(data) {
+	return data.map(function(d) { 
+		return d.map(function(e) {
+			return {"x":e[0],"y":e[1],"y0":e[2]}
+		})
 	});
+}
+
+function position(data) {
+	return data.map(function(d) {
+		return d.map(function(e) {
+  		return [e.x,e.y,e.y0]
+		})
+	});
+};
+
+// clear canvas
+function clear() {
+  ctx.clearRect(0,0,w,h);
+};
 });
 </script>
