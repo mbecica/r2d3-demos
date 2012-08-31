@@ -220,8 +220,8 @@ var sb = {
       
 			data["total"].forEach(function(d, i) {
 				// Total Revenue
-        var bar = svg.set()
-        ba.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+        var bar = svg.set();
+        bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
           .attr(sb.style.bar2));
 				
 				bar.transform(['t', x(d.x), sb.height() - y(d.y) - y(data["gross"][i].y)]);
