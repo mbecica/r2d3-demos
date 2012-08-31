@@ -56,14 +56,14 @@ $('#switch').click(function() {
 
 function render(data) {
 	// Compute the x-domain and y-domain.
-	y.domain([0, d3.max(data.map(function(d) {
+	y.domain([0, d3.max(_(data).map(function(d) {
 					return d3.max(d, function(e, i) {
 						return data[1][i].y + data[0][i].y
 					})}))*1.1]);
-	x.domain(data[1].map(function(d) { return d.x; }));
+	x.domain(_(data[1]).map(function(d) { return d.x; }));
 
 	// y axis
-	y.ticks(4).map(drawAxis);
+	_(y.ticks(4)).map(drawAxis);
 
 	// Draw bars
 	_(data).each(function(row, i) {
@@ -127,16 +127,16 @@ function transition(file, count) {
 };
 
 function resumeData(data) {
-	return data.map(function(d) { 
-		return d.map(function(e) {
+	return _(data).map(function(d) { 
+		return _(d).map(function(e) {
 			return {"x":e[0],"y":e[1],"y0":e[2]}
 		})
 	});
 }
 
 function position(data) {
-	return data.map(function(d) {
-		return d.map(function(e) {
+	return _(data).map(function(d) {
+		return _(d).map(function(e) {
   		return [e.x,e.y,e.y0]
 		})
 	});
