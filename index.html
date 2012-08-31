@@ -5,14 +5,35 @@
 	<script type="text/javascript" src="lib/sizzle.min.js"></script>
 	<script type="text/javascript" src="lib/es5-shim.min.js"></script>
 	<![endif]-->
-	<script type="text/javascript" src="lib/raphael-min.js"></script>
-	<script type="text/javascript" src="lib/d3.v2.min.js"></script>
 	<script type="text/javascript" src="lib/underscore.js"></script>
+	<script type="text/javascript" src="lib/raphael-min.js"></script>
+<script type="text/javascript">
+var isStyleFuncSupported = CSSStyleDeclaration.prototype.getPropertyValue != null;
+if (!isStyleFuncSupported) {
+    CSSStyleDeclaration.prototype.getPropertyValue = function(a) {
+        return this.getAttribute(a);
+    };
+    CSSStyleDeclaration.prototype.setProperty = function(styleName, value, priority) {
+        this.setAttribute(styleName,value);
+        var priority = typeof priority != 'undefined' ? priority : '';
+        if (priority != '') {
+            // Add priority manually
+            var rule = new RegExp(RegExp.escape(styleName) + '\\s*:\\s*' + RegExp.escape(value) + '(\\s*;)?', 'gmi');
+            this.cssText = this.cssText.replace(rule, styleName + ': ' + value + ' !' + priority + ';');
+        } 
+    }
+    CSSStyleDeclaration.prototype.removeProperty = function(a) {
+        return this.removeAttribute(a);
+    }
+    CSSStyleDeclaration.prototype.getPropertyPriority = function(styleName) {
+        var rule = new RegExp(RegExp.escape(styleName) + '\\s*:\\s*[^\\s]*\\s*!important(\\s*;)?', 'gmi');
+        return rule.test(this.cssText) ? 'important' : '';
+    }
+}
+</script>
+	<script type="text/javascript" src="lib/d3.v2.min.js"></script>
 	<script type="text/javascript" src="lib/zepto.js"></script>
-	<script type="text/javascript">
-	var map = _.map;
-	</script>
-	<style>
+		<style>
 		#revenue {
 			width:900px;
 			margin-left:20px;
