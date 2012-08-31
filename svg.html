@@ -56,11 +56,11 @@ $('#switch').click(function() {
 
 var render = function(data, stacks) {
   // Compute the x-domain and y-domain.
-	y.domain([0, d3.max($.map(data, function(d) {
+	y.domain([0, d3.max(_(data).map(function(d) {
           return d3.max(d, function(e, i) {
             return data["total"][i].y + data["gross"][i].y
           })}))*1.1]);
-  x.domain(data["total"].map(function(d) { return d.x; }));
+  x.domain(_(data["total"]).map(function(d) { return d.x; }));
 
   // Add a group for each bar.
   var bar = svg.selectAll("g.bar")
@@ -111,11 +111,11 @@ var render = function(data, stacks) {
 
 var rerender = function(data, stacks) {
   // Compute the x-domain and y-domain.
-	y.domain([0, d3.max($.map(data, function(d) {
+	y.domain([0, d3.max(_(data).map(function(d) {
           return d3.max(d, function(e, i) {
             return data["total"][i].y + data["gross"][i].y
           })}))*1.1]);
-  x.domain(data["total"].map(function(d) { return d.x; }));
+  x.domain(_(data["total"]).map(function(d) { return d.x; }));
 
   // Add a group for each bar.
   var bar = svg.selectAll("g.bar")
