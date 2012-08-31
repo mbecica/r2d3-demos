@@ -8,7 +8,7 @@
 	<script type="text/javascript" src="lib/underscore.js"></script>
 	<script type="text/javascript" src="lib/raphael-min.js"></script>
 <script type="text/javascript">
-var isStyleFuncSupported = CSSStyleDeclaration.prototype.getPropertyValue != null;
+var isStyleFuncSupported = CSSStyleDeclaration != null || CSSStyleDeclaration.prototype.getPropertyValue != null;
 if (!isStyleFuncSupported) {
     CSSStyleDeclaration.prototype.getPropertyValue = function(a) {
         return this.getAttribute(a);
