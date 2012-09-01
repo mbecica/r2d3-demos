@@ -1,0 +1,8 @@
+These are some examples of rendering D3 charts with different technologies:
+<ul>
+<li><b>SVG (standard D3):<b> No ie8 or ie7 compatibility.  Full transition support.</li>
+<li><b>Canvas:</b> No ie8 or ie7 compatibility.  Attempted compatibility with webshims (failed).  Full transition support.</li>
+<li><b>RaphaelJS:</b> Full browser compatibility.  Minimal transition support (in progress).</li>
+</ul>
+
+The purpose is to build charts with full browser compatibility and the same rendering power as D3 with SVG.
