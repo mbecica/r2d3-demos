@@ -1,27 +1,50 @@
 <!DOCTYPE HTML>
 <head>
 <title>canvas examples</title>
+<script type="text/javascript" src="lib/jquery.min.js"></script>
+<script type="text/javascript" src="lib/modernizr.js"></script>
+<script type="text/javascript" src="lib/js-webshim/minified/polyfiller.js"></script>
 <script type="text/javascript" src="lib/underscore.js"></script>
 <script type="text/javascript">
 var map = _.map;
 </script>
-<script type="text/javascript" src="lib/d3.v2.min.js"></script>
-<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-<script src="lib/modernizr.custom.min.js"></script>
-<script src="lib/js-webshim/dev/polyfiller.js"></script>
-</head>
-<body>
-<div id="graphs"></div>
-<button id="switch">Switch</button>
+ <!--
+	<script type="text/javascript" src="lib/json2.js"></script>
+  <script type="text/javascript" src="lib/js-shim.js"></script>
+	<script type="text/javascript">
+var CSSStyleDeclaration = function() {};
+    CSSStyleDeclaration.prototype.getPropertyValue = function(a) {
+        return this.getAttribute(a);
+    };
+    CSSStyleDeclaration.prototype.setProperty = function(styleName, value, priority) {
+        this.setAttribute(styleName,value);
+        var priority = typeof priority != 'undefined' ? priority : '';
+        if (priority != '') {
+            // Add priority manually
+            var rule = new RegExp(RegExp.escape(styleName) + '\\s*:\\s*' + RegExp.escape(value) + '(\\s*;)?', 'gmi');
+            this.cssText = this.cssText.replace(rule, styleName + ': ' + value + ' !' + priority + ';');
+        }
+    }
+    CSSStyleDeclaration.prototype.removeProperty = function(a) {
+        return this.removeAttribute(a);
+    }
+    CSSStyleDeclaration.prototype.getPropertyPriority = function(styleName) {
+        var rule = new RegExp(RegExp.escape(styleName) + '\\s*:\\s*[^\\s]*\\s*!important(\\s*;)?', 'gmi');
+        return rule.test(this.cssText) ? 'important' : '';
+    }
+  RegExp.escape = function(text) {
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+  }
+	</script>
+  --> 
+<script type="text/javascript" src="lib/d3.v2.js"></script>
 <script type="text/javascript">
 window.FlashCanvasOptions = {
 		disableContextMenu: true
 };
-$.webshims.polyfill();
+$.webshims.setOptions('canvas', {type: 'flashpro' });
+$.webshims.polyfill('canvas');
 $(function() {
-$.webshims.setOptions('canvas', {
-	type: 'flashpro' //excanvas | flash | flashpro
-});
 var w = 720,
     h = 300,
     p = [0, 25, 15, 0],
@@ -34,7 +57,6 @@ var w = 720,
     format = d3.time.format("%b %e"),
 		swap = true;
 
-$("#graphs").append("<canvas width="+w+" height="+h+" id='canvas'></canvas>");
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext('2d');
 
@@ -148,6 +170,14 @@ function position(data) {
 // clear canvas
 function clear() {
   ctx.clearRect(0,0,w,h);
-};
+}
+
 });
 </script>
+</head>
+<body>
+<div id="graphs"></div>
+<canvas width="720" height="300" id="canvas"></canvas>
+<button id="switch">Switch</button>
+</body>
+</html>
