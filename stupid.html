@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<head>
+<script type="text/javascript" src="lib/jquery.min.js"></script>
+<script type="text/javascript" src="lib/modernizr.js"></script>
+<script type="text/javascript" src="lib/js-webshim/minified/polyfiller.js"></script>
+<script type="text/javascript" src="lib/underscore.js"></script>
+<script>
+window.FlashCanvasOptions = { disableContextMenu: true};
+$.webshims.setOptions('canvas', {type: 'flashpro'});
+$.webshims.polyfill('canvas');
+$.webshims.ready('DOM', function() {
+	console.log('shims');
+		});
+$('document').ready(function() {
+	console.log('end ready');
+	var canvas = $('#canvas');
+	var ctx = canvas.getContext('2d');
+	ctx.fillStyle = "#ff9933";
+	ctx.fillRect(0, 0, 300, 300);
+	});
+</script>
+</head>
+<body>
+<canvas id="canvas" width="700" height="400"></canvas>

@@ -5,11 +5,43 @@
 	<script type="text/javascript" src="lib/sizzle.min.js"></script>
 	<script type="text/javascript" src="lib/es5-shim.min.js"></script>
 	<![endif]-->
-	<script type="text/javascript" src="lib/raphael-min.js"></script>
-	<script type="text/javascript" src="lib/d3.v2.min.js"></script>
+	<script type="text/javascript" src="lib/jquery.min.js"></script>
 	<script type="text/javascript" src="lib/underscore.js"></script>
-	<script type="text/javascript" src="lib/zepto.js"></script>
-	<style>
+	<script type="text/javascript" src="lib/raphael-min.js"></script>
+	<script type="text/javascript">
+		var map = _.map;
+	</script>
+	<!--[if IE]>
+	<script type="text/javascript" src="lib/json2.js"></script>
+<script type="text/javascript">
+    var CSSStyleDeclaration = function() {};
+		CSSStyleDeclaration.prototype.getPropertyValue = function(a) {
+        return this.getAttribute(a);
+    };
+    CSSStyleDeclaration.prototype.setProperty = function(styleName, value, priority) {
+        this.setAttribute(styleName,value);
+        var priority = typeof priority != 'undefined' ? priority : '';
+        if (priority != '') {
+            // Add priority manually
+            var rule = new RegExp(RegExp.escape(styleName) + '\\s*:\\s*' + RegExp.escape(value) + '(\\s*;)?', 'gmi');
+            this.cssText = this.cssText.replace(rule, styleName + ': ' + value + ' !' + priority + ';');
+        } 
+    }
+    CSSStyleDeclaration.prototype.removeProperty = function(a) {
+        return this.removeAttribute(a);
+    }
+    CSSStyleDeclaration.prototype.getPropertyPriority = function(styleName) {
+        var rule = new RegExp(RegExp.escape(styleName) + '\\s*:\\s*[^\\s]*\\s*!important(\\s*;)?', 'gmi');
+        return rule.test(this.cssText) ? 'important' : '';
+    }
+// Escape regex chars with \
+	RegExp.escape = function(text) {
+		    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+	}
+</script>
+	<![endif] -->	
+<script type="text/javascript" src="lib/d3.v2.min.js"></script>
+		<style>
 		#revenue {
 			width:900px;
 			margin-left:20px;
@@ -20,7 +52,9 @@
 			margin-left:20px;
 		}
 	</style>
+</head>
 <body>
+<button id="switch">Update</button>
 <div id="revenue"></div>
 <div id="use"></div>
 <script type="text/javascript">
@@ -37,6 +71,9 @@ function makeData() {
 	$('body').append("div").text(JSON.stringify(data));
 }
 //makeData();
+
+var swap = true,
+		transition_count = 0;
 
 var sline = {
 	margin: {top:20, right:0, bottom:0, left:15},
@@ -62,6 +99,8 @@ var sline = {
 			fill: '#999', 'text-anchor': 'middle'
 		}
 	},
+	data1: [],
+	data2: [],
 	draw: function() {
 		var x = d3.time.scale()
 				.range([sline.margin.left, sline.width()]);
@@ -87,9 +126,8 @@ var sline = {
 		
 		svg.setStart();
     
-		d3.json("revenue.json", function(rData) {
     	var format = d3.time.format("%b %e");
-			var data = rData[0]["total"];
+			var data = sline.data2[0] ? sline.data2[0]["total"] : sline.data1[0]["total"];
 
       // scale domain.
       y.domain([0, d3.max(data, function(d) {
@@ -122,7 +160,6 @@ var sline = {
 						.attr(sline.style.xlabel);
 				}
 			});
-		});
 		svg.setFinish()	
 	}
 }
@@ -151,6 +188,9 @@ var sb = {
 			fill: "#444", stroke: 0
 		}
 	},
+	data1: [],
+	data2: [],
+  transitionA: false,
 	draw: function() {
     var format = d3.time.format("%b %e");
 
@@ -174,65 +214,119 @@ var sb = {
 											sb.width() + sb.margin.left + sb.margin.right, 
 											sb.height() + sb.margin.top + sb.margin.bottom);
 
-    d3.json("revenue.json", function(rData) {
+		var data = sb.data2[0] ? sb.data2[0] : sb.data1[0];
+		// scale domain.
+		y.domain([0, d3.max(_(data).map(function(d) {
+				return d3.max(d, function(e, i) {
+					return data["total"][i].y + data["gross"][i].y
+				})}))*1.1]);
+		x.domain(_(data["total"]).map(function(d) { return d.x; }));
 
-			var data = rData[0];
-      // scale domain.
-      y.domain([0, d3.max($.map(data, function(d) {
-					return d3.max(d, function(e, i) {
-						return data["total"][i].y + data["gross"][i].y
-					})}))*1.1]);
-      x.domain(data["total"].map(function(d) { return d.x; }));
+		// y axis 
+		y.ticks(4).forEach(function(a) {
+			var tick = svg.set(),
+					st = "M0,"+(sb.height()-y(a))+"L"+(sb.width()-sb.margin.left)+","+(sb.height()-y(a));
+			if (a != 0) {
+				tick.push(svg.text(sb.margin.left, sb.height()-y(a)+10, a)
+										 .attr(sb.style.ylabel)); 
+				tick.push(svg.path(st).attr(sb.style.yline));
+			} else {
+				tick.push(svg.path(st).attr(sb.style.baseline));	
+			}
+		});
+		
+		// Hover rectangle
+		var h = svg.set(),
+				hrect = svg.rect(0, 0, x.rangeBand(), sb.height()).attr({"fill":"#eee", "fill-opacity":0, "stroke":0});
+				h.push(hrect);
 
-			// y axis 
-			y.ticks(4).forEach(function(a) {
-				var tick = svg.set(),
-						st = "M0,"+(sb.height()-y(a))+"L"+(sb.width()-sb.margin.left)+","+(sb.height()-y(a));
-				if (a != 0) {
-					tick.push(svg.text(sb.margin.left, sb.height()-y(a)+10, a)
-											 .attr(sb.style.ylabel)); 
-					tick.push(svg.path(st).attr(sb.style.yline));
-				} else {
-					tick.push(svg.path(st).attr(sb.style.baseline));	
-				}
-			});
-      
-			// Hover rectangle
-			var h = svg.set(),
-					hrect = svg.rect(0, 0, x.rangeBand(), sb.height()).attr({"fill":"#eee", "fill-opacity":0, "stroke":0});
-					h.push(hrect);
-
-			data["gross"].forEach(function(d, i) {
-				// Gross Revenue
-        var bar = svg.set();
-        bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
-          .attr(sb.style.bar1));
-				// x axis
-				if (i%7 == 0 || i ==0) {
-					bar.push(svg.text(x.rangeBand()-sb.margin.left+2, y(d.y) + 10, format(new Date(d.x)))
-						.attr(sb.style.xlabel));
-				}
-				bar.transform(['t', x(d.x), sb.height() - y(d.y)]);
-      });
-      
-			data["total"].forEach(function(d, i) {
-				// Total Revenue
-        var bar = svg.set()
-        ba.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
-          .attr(sb.style.bar2));
-				
-				bar.transform(['t', x(d.x), sb.height() - y(d.y) - y(data["gross"][i].y)]);
-      });
+		data["gross"].forEach(function(d, i) {
+			// Gross Revenue
+			var bar = svg.set();
+			bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+				.attr(sb.style.bar1));
+			// x axis
+			if (i%7 == 0 || i ==0) {
+				bar.push(svg.text(x.rangeBand()-sb.margin.left+2, y(d.y) + 10, format(new Date(d.x)))
+					.attr(sb.style.xlabel));
+			}
+			bar.transform(['t', x(d.x), sb.height() - y(d.y)]);
+		});
+		
+		data["total"].forEach(function(d, i) {
+			// Total Revenue
+			var bar = svg.set();
+			bar.push(svg.rect(0, 0, x.rangeBand(), y(d.y))
+				.attr(sb.style.bar2));
 			
-			hrect.hover(function() {
-				this.attr({"fill-opacity":.3});
-			}, function() {
-				this.attr({"fill-opacity":0});
-			});
+			bar.transform(['t', x(d.x), sb.height() - y(d.y) - y(data["gross"][i].y)]);
+		});
+		
+		hrect.hover(function() {
+			this.attr({"fill-opacity":.3});
+		}, function() {
+			this.attr({"fill-opacity":0});
+		});
 
-    });
 	}
 }
-//sb.draw();
-//sline.draw();
+
+var transition = true;
+d3.json("revenue.json", function(rData) {
+	sb.data1 = rData;
+	sb.draw();
+	sline.data1 = rData;
+	sline.draw();
+});
+
+$('#switch').click(function() {
+	clear();
+	d3.json("rev-two.json", function(rData) {
+		sb.data2 = rData;	
+		sb.draw();
+		sline.data2 = rData;
+		sline.draw();
+	});
+});
+/*
+function transition(file, count) {
+  d3.json(file, function(json) {
+    var data = d3.layout.stack()(_(json[0]).map(function(row) { return row; }));
+
+    // find next positions by interpolating arrays
+    var transition = d3.interpolate(position(last), position(data));
+
+    // run transition
+    d3.timer(function(t) {
+      // abort old transition
+      if (count < transition_count) return true;
+
+      clear();
+      if (t > 1000) {
+        last = data;
+        render(last);
+        return true
+      };
+      last = transition(t/1000);
+      render(resumeData(last));
+    });
+  });
+};
+
+function resumeData(data) {
+  return _(data).map(function(d) { 
+    return _(d).map(function(e) {
+      return {"x":e[0],"y":e[1],"y0":e[2]}
+    })
+  });
+}
+
+function position(data) {
+  return _(data).map(function(d) {
+    return _(d).map(function(e) {
+      return [e.x,e.y,e.y0]
+    })
+  });
+};
+*/
 </script>
