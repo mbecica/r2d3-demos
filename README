@@ -1,16 +1,16 @@
 These are some hacky examples of rendering D3 charts with different technologies:
-* *svg.html*: SVG (standard D3)
-   * No ie8 or ie7 compatibility.  
-   * Full transition support.
-* *canvas.html*: Canvas rendering
-   * No ie8 or ie7 compatibility: Attempted compatibility with webshims (failed).  
-   * Full transition support.
-* *index.html*: RaphaelJS
-   * Full browser compatibility.  
-   * Minimal transition support (in progress).
-* *r2d3.html*: [r2d3.js](https://github.com/mhemesath/r2d3): a raphael-d3 library
-   * Full browser compatibility
-   * Transition support
+*  *svg.html*: SVG (standard D3)
+   *  No ie8 or ie7 compatibility.  
+   *  Full transition support.
+*  *canvas.html*: Canvas rendering
+   *  No ie8 or ie7 compatibility: Attempted compatibility with webshims (failed).  
+   *  Full transition support.
+*  *index.html*: RaphaelJS
+   *  Full browser compatibility.  
+   *  Minimal transition support (in progress).
+*  *r2d3.html*: [r2d3.js](https://github.com/mhemesath/r2d3): a raphael-d3 library
+   *  Full browser compatibility
+   *  Transition support
 
 The purpose is to explore and compare techniques for rendering D3 charts with full browser compatibility.
 
