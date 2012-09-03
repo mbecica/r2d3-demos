@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<head>
+  <title>R2D3 example</title>
+	<script src="lib/underscore.js"></script>
+	<script src="lib/jquery.min.js"></script>
+	<!--[if lte IE 8]>
+	<script type="text/javascript" src="lib/compat.js"></script>
+	<script type="text/javascript" src="lib/json2.js"></script>
+	<![endif]-->
+	<script src="lib/sizzle.min.js"></script>
+	<script src="lib/raphael-min.js"></script>
+	<script src="lib/r2d3.v2.js"></script>
+</head>
+<body>
+<div></div>
+<script type="text/javascript">
+var w = 700,
+    h = 300,
+    p = [20, 50, 30, 20],
+    x = d3.scale.ordinal().rangeRoundBands([0, w - p[1] - p[3]]),
+    y = d3.scale.linear().range([0, h - p[0] - p[2]]),
+    z = d3.scale.ordinal().range(["lightblue", "darkgrey"]),
+    parse = d3.time.format("%b %e").parse,
+    format = d3.time.format("%b %e");
+
+var svg = d3.select("div").raphael(w, h);
+
+d3.json("revenue.json", function(rData) {
+    var data = rData[0];
+    var stacks = d3.layout.stack()(_(data).map(function(row) {
+      return row;
+    }));
+    render(data, stacks);
+});
+
+var render = function(data, stacks) {
+  // Compute the x-domain and y-domain.
+  y.domain([0, d3.max(_(data).map(function(d) {
+          return d3.max(d, function(e, i) {
+            return data["total"][i].y + data["gross"][i].y
+          })}))*1.1]);
+  x.domain(_(data["total"]).map(function(d) { return d.x; }));
+
+  // Add a group for each bar.
+  var bar = svg.selectAll(".bar").data(stacks);
+      bar.enter().append("set")
+     		 .attr("class", "bar");
+ 
+	 // Add a rect for each date.
+  var rect = bar.selectAll("rect.rect").data(Object);
+			rect.enter().append("rect")
+			.attr("class", "rect")
+      .attr("x", function(d) { return x(d.x) + 1; })
+      .attr("y", function(d) { return h - y(d.y); })
+      .attr("height", function(d) { return y(d.y); })
+      .attr("width", x.rangeBand()-1)
+			.attr("opacity", ".5")
+			.attr("stroke", "none");
+
+	bar.attr("fill", function(d, i) {return z(i); });
+}
+
+</script>
+</html>
