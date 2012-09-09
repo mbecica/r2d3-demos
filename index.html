@@ -235,11 +235,6 @@ var sb = {
 			}
 		});
 		
-		// Hover rectangle
-		var h = svg.set(),
-				hrect = svg.rect(0, 0, x.rangeBand(), sb.height()).attr({"fill":"#eee", "fill-opacity":0, "stroke":0});
-				h.push(hrect);
-
 		data["gross"].forEach(function(d, i) {
 			// Gross Revenue
 			var bar = svg.set();
@@ -262,12 +257,6 @@ var sb = {
 			bar.transform(['t', x(d.x), sb.height() - y(d.y) - y(data["gross"][i].y)]);
 		});
 		
-		hrect.hover(function() {
-			this.attr({"fill-opacity":.3});
-		}, function() {
-			this.attr({"fill-opacity":0});
-		});
-
 	}
 }
 

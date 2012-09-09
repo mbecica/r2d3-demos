@@ -16,14 +16,14 @@
 <script type="text/javascript">
 var w = 700,
     h = 300,
-    p = [20, 50, 30, 20],
+    p = [0, 0, 10, 15],
     x = d3.scale.ordinal().rangeRoundBands([0, w - p[1] - p[3]]),
     y = d3.scale.linear().range([0, h - p[0] - p[2]]),
     z = d3.scale.ordinal().range(["lightblue", "darkgrey"]),
     parse = d3.time.format("%b %e").parse,
     format = d3.time.format("%b %e");
 
-var svg = d3.select("div").raphael(w, h);
+var svg = d3.select("div").raphael(w + p[1] + p[3], h + p[0] + p[2]);
 
 d3.json("revenue.json", function(rData) {
     var data = rData[0];
@@ -51,13 +51,42 @@ var render = function(data, stacks) {
 			rect.enter().append("rect")
 			.attr("class", "rect")
       .attr("x", function(d) { return x(d.x) + 1; })
-      .attr("y", function(d) { return h - y(d.y); })
+      .attr("y", function(d) { return h - y(d.y) - p[2]; })
       .attr("height", function(d) { return y(d.y); })
       .attr("width", x.rangeBand()-1)
-			.attr("opacity", ".5")
 			.attr("stroke", "none");
 
 	bar.attr("fill", function(d, i) {return z(i); });
+
+	// Add a label per date.
+  var label = svg.selectAll("text.xlabel").data(x.domain());
+      label.enter().append("text")
+      .attr("x", function(d) { return x(d) + x.rangeBand() / 2; })
+      .attr("y", function() {return h })
+      .attr("text-anchor", "middle")
+      .attr("dy", ".71em")
+      .attr("class", "xlabel")
+      .text(function(d) { return format(new Date(d)) });
+
+// Add y-axis rules.
+  var rule = svg.selectAll(".rule")
+      .data(y.ticks(3))
+      .enter().append("rect")
+      .attr("class", "rule")
+			.attr("height", 1)
+			.attr("width", w)
+      .attr("stroke", function(d) { return d ? "#ccc" : "#000"; })
+      .attr("stroke-opacity", function(d) { return d ? .7 : null; })
+      .attr("y", function(d) { return y(d) + p[0]+p[2]; });
+
+  svg.selectAll("text.ylabel")
+      .data(y.ticks(3))
+			.enter().append("text")
+      .attr("x", 0)
+      .attr("dy", "1em")
+      .attr("class", "ylabel")
+      .text(d3.format(",d"))
+      .attr("y", function(d) { return y(d) + p[0]+p[2]; });
 }
 
 </script>
